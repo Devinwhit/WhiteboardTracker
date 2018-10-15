@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">Whiteboard Tracker</string>
+    <string name="log_workout">Log Workout</string>
+    <string name="log_results">Log Results</string>
+    <string name="DefaultWorkoutText">Default Workout Text - Just a placeholder</string>
+    <string name="Result_Activity_Title">Add Workout Results</string>
+    <string name="results">Results</string>
+    <string name="wodPlaceholder">Workout</string>
+    <string name="date_text">Date</string>
+    <string name="log_out">Sign out</string>
+    <string name="gym_home">Set home gym</string>
+    <string name="yourResults">Enter your results here</string>
+    <string name="submit">Submit</string>
+    <string name="workout_title">WOD Title</string>
+    <string name="title_placeholder">Workout Title</string>
+</resources>

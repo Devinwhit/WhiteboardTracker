@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="cardview_margin">10sp</dimen>
+    <dimen name="cardview_minHeight">150dp</dimen>
+    <dimen name="fab_margin">10dp</dimen>
+    <dimen name="fab_elevation">6dp</dimen>
+    <dimen name="cardview_title">24sp</dimen>
+    <dimen name="cardview_line">2dp</dimen>
+    <dimen name="main_title_size">22sp</dimen>
+</resources>
