@@ -3,13 +3,17 @@ package com.devinwhitney.android.whiteboardtracker;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.AssetManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.location.Location;
 import android.net.Uri;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.preference.PreferenceManager;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -20,10 +24,16 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.firebase.ui.auth.AuthUI;
+import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.places.GeoDataClient;
 import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.PlaceBuffer;
 import com.google.android.gms.location.places.PlacePhotoMetadata;
 import com.google.android.gms.location.places.PlacePhotoMetadataBuffer;
 import com.google.android.gms.location.places.PlacePhotoMetadataResponse;
@@ -44,10 +54,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
-public class MainActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
+public class MainActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
 
     public static final int RC_SIGN_IN = 1;
@@ -62,6 +74,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     private FirebaseAuth mFirebaseAuth;
     private FirebaseAuth.AuthStateListener mAuthStateListener;
+
+    private GoogleApiClient mClient;
+    private Geofencing mGeofencing;
 
     protected GeoDataClient mGeoDataClient;
 
@@ -110,18 +125,34 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         setupSharedPreferences();
         mGeoDataClient = Places.getGeoDataClient(this, null);
         getMainPhoto();
+        mClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addApi(LocationServices.API)
+                .addApi(Places.GEO_DATA_API)
+                .enableAutoManage(this, this)
+                .build();
+        mGeofencing = new Geofencing(mClient, this);
+       Places.GeoDataApi.getPlaceById(mClient, sharedPreferences.getString("placeID", "")).setResultCallback(new ResultCallback<PlaceBuffer>() {
+           @Override
+           public void onResult(@NonNull PlaceBuffer places) {
+               Place place = places.get(0);
+               mGeofencing.setGeofence(place);
+               mGeofencing.registerGymGeofence();
+           }
+       });
 
 
     }
 
     private void getMainPhoto() {
         SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
-        try {
+
             final String placeId = pref.getString("placeID", "Set home gym");
             final Task<PlacePhotoMetadataResponse> photoMetadataResponse = mGeoDataClient.getPlacePhotos(placeId);
             photoMetadataResponse.addOnCompleteListener(new OnCompleteListener<PlacePhotoMetadataResponse>() {
                 @Override
                 public void onComplete(@NonNull Task<PlacePhotoMetadataResponse> task) {
+                    try {
                     // Get the list of photos.
                     PlacePhotoMetadataResponse photos = task.getResult();
                     // Get the PlacePhotoMetadataBuffer (metadata for all of the photos).
@@ -138,12 +169,13 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                             mMainPhoto.setImageBitmap(bitmap);
                         }
                     });
+                    } catch (Exception e) {
+                        System.out.println("No id set");
+                        Picasso.get().load("https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=de05b46a8ac91fcff2b134811e62d79f&auto=format&fit=crop&w=1489&q=80").into(mMainPhoto);
+                    }
                 }
             });
-        } catch (Exception e) {
-            System.out.println("No id set");
-            Picasso.get().load("https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=de05b46a8ac91fcff2b134811e62d79f&auto=format&fit=crop&w=1489&q=80").into(mMainPhoto);
-        }
+
     }
 
     private void setupSharedPreferences() {
@@ -200,6 +232,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 SharedPreferences.Editor editor = sharedPreferences.edit();
                 editor.putString("gym", place.getName().toString());
                 editor.putString("placeID", place.getId());
+                mGeofencing.setGeofence(place);
                 editor.apply();
             }
         }
@@ -266,5 +299,33 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             getMainPhoto();
         }
 
+    }
+
+    @Override
+    public void onConnected(@Nullable Bundle bundle) {
+        refreshPlacesData();
+        Log.i(MainActivity.class.toString(), "API Client Connection Successful!");
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+
+    }
+    public void refreshPlacesData() {
+
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        PendingResult<PlaceBuffer> placeResult = Places.GeoDataApi.getPlaceById(mClient,
+                sharedPreferences.getString("placeID", ""));
+        placeResult.setResultCallback(new ResultCallback<PlaceBuffer>() {
+            @Override
+            public void onResult(@NonNull PlaceBuffer places) {
+                mGeofencing.setGeofence(places.get(0));
+            }
+        });
     }
 }

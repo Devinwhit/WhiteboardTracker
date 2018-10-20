@@ -29,6 +29,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-auth:16.0.4'
     implementation 'com.rmtheis:tess-two:9.0.0'
     implementation 'com.google.android.gms:play-services-places:16.0.0'
+    implementation 'com.google.android.gms:play-services-location:16.0.0'
     implementation 'com.android.support:preference-v7:26.1.0'
     implementation 'com.squareup.picasso:picasso:2.71828'
 
