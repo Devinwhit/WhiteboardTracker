@@ -1,7 +1,9 @@
 package com.devinwhitney.android.whiteboardtracker;
 
+import android.Manifest;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -10,6 +12,7 @@ import android.location.Location;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.preference.PreferenceManager;
@@ -23,6 +26,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.devinwhitney.android.whiteboardtracker.model.Workout;
 import com.firebase.ui.auth.AuthUI;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
@@ -44,6 +48,9 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.ChildEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.googlecode.tesseract.android.TessBaseAPI;
@@ -54,8 +61,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Random;
 
@@ -71,9 +80,13 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     private ImageView mMainPhoto;
 
     private TextView mGymLocation;
+    private TextView mTodaysWod;
 
     private FirebaseAuth mFirebaseAuth;
     private FirebaseAuth.AuthStateListener mAuthStateListener;
+    private FirebaseDatabase mFirebaseDatabase;
+    private DatabaseReference mWorkoutDatabseReference;
+    private ChildEventListener mChildEventListener;
 
     private GoogleApiClient mClient;
     private Geofencing mGeofencing;
@@ -88,6 +101,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mFirebaseAuth = FirebaseAuth.getInstance();
 
         mRecordWorkout = findViewById(R.id.record_workout_button);
+        mTodaysWod = findViewById(R.id.main_screen_wod);
         mRecordWorkout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -132,16 +146,53 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 .enableAutoManage(this, this)
                 .build();
         mGeofencing = new Geofencing(mClient, this);
-       Places.GeoDataApi.getPlaceById(mClient, sharedPreferences.getString("placeID", "")).setResultCallback(new ResultCallback<PlaceBuffer>() {
-           @Override
-           public void onResult(@NonNull PlaceBuffer places) {
-               Place place = places.get(0);
-               mGeofencing.setGeofence(place);
-               mGeofencing.registerGymGeofence();
-           }
-       });
+
+        checkTodaysWod();
+
+    }
+
+    private void checkTodaysWod() {
+        mFirebaseDatabase = FirebaseDatabase.getInstance();
+        mWorkoutDatabseReference = mFirebaseDatabase.getReference().child("workouts");
+        mChildEventListener = new ChildEventListener() {
+            @Override
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                Workout workout = dataSnapshot.getValue(Workout.class);
+                if (workout != null) {
+                    mTodaysWod.setText(workout.getWod());
+                }
+            }
+
+            @Override
+            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+            }
+
+            @Override
+            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+
+            }
+
+            @Override
+            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        };
+        mWorkoutDatabseReference.orderByChild("date").equalTo(getCurrentDate()).addChildEventListener(mChildEventListener);
+    }
 
 
+    private String getCurrentDate() {
+        String format = "MM/dd/yyyy";
+        SimpleDateFormat df = new SimpleDateFormat(format);
+        Date date = new Date();
+        String currentDate = df.format(date);
+        return currentDate;
     }
 
     private void getMainPhoto() {
@@ -303,8 +354,14 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
-        refreshPlacesData();
-        Log.i(MainActivity.class.toString(), "API Client Connection Successful!");
+        //check for access to fine location
+        if (checkLocationPermissions()) {
+
+            refreshPlacesData();
+            Log.i(MainActivity.class.toString(), "API Client Connection Successful!");
+        } else {
+            //don't register broadcast receiver
+        }
     }
 
     @Override
@@ -320,12 +377,23 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         PendingResult<PlaceBuffer> placeResult = Places.GeoDataApi.getPlaceById(mClient,
-                sharedPreferences.getString("placeID", ""));
+                sharedPreferences.getString("placeID", "f44868d96a3c47f112e9ca74c26c58e57f00e956"));
         placeResult.setResultCallback(new ResultCallback<PlaceBuffer>() {
             @Override
             public void onResult(@NonNull PlaceBuffer places) {
                 mGeofencing.setGeofence(places.get(0));
+                mGeofencing.registerGymGeofence();
             }
         });
     }
+
+    public boolean checkLocationPermissions() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.ACCESS_FINE_LOCATION}, 105);
+        } else {
+            return true;
+        }
+        return true;
+    }
+
 }

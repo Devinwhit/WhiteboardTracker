@@ -13,6 +13,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import com.devinwhitney.android.whiteboardtracker.model.Workout;
 import com.google.firebase.auth.FirebaseAuth;
@@ -56,6 +57,10 @@ public class AddResults extends AppCompatActivity {
         submit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if (!verifyInfo()){
+                    Toast.makeText(getApplicationContext(), "Make sure to fill everything out", Toast.LENGTH_SHORT).show();
+                    return;
+                }
                 Workout workout = new Workout();
                 workout.setDate(calendarText.getText().toString());
                 workout.setResults(resultsText.getText().toString());
@@ -93,13 +98,14 @@ public class AddResults extends AppCompatActivity {
         mWorkoutDatabseReference = mFirebaseDatabase.getReference().child("workouts");
     }
 
-    private String getCurrentDate() {
-        String format = "MM/dd/yyyy";
-        SimpleDateFormat df = new SimpleDateFormat(format);
-        Date date = new Date();
-        String currentDate = df.format(date);
-        return currentDate;
+    private boolean verifyInfo() {
+        if(calendarText.getText().toString().equals("") || resultsText.getText().toString().equals("") || wodTitle.getText().toString().equals("")
+                || wodText.getText().toString().equals("")) {
+            return false;
+        }
+        return true;
     }
+
 
     private void updateSelection() {
         String format = "MM/dd/yyyy";

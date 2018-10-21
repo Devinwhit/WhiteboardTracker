@@ -35,17 +35,44 @@
 
     </FrameLayout>
 
-    <android.support.v7.widget.AppCompatButton
-        android:id="@+id/record_workout_button"
+    <TextView
+        android:id="@+id/Today_wod_Text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="24dp"
-        android:text="Snap workout"
+        android:layout_marginTop="8dp"
+        android:text="@string/todays_wod"
+        android:textSize="@dimen/main_screen_wod_title"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/photo_container" />
+
+    <TextView
+        android:id="@+id/main_screen_wod"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="24dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="8dp"
+        android:text="@string/daily_wod"
+        android:textSize="@dimen/main_screen_wod"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/Today_wod_Text" />
+
+    <android.support.v7.widget.AppCompatButton
+        android:id="@+id/record_workout_button"
+        android:layout_width="wrap_content"
+        android:layout_height="47dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:text="@string/log_button"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/main_screen_wod" />
 
 
 </android.support.constraint.ConstraintLayout>

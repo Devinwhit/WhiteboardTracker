@@ -7,4 +7,6 @@
     <dimen name="cardview_title">24sp</dimen>
     <dimen name="cardview_line">2dp</dimen>
     <dimen name="main_title_size">22sp</dimen>
+    <dimen name="main_screen_wod">16sp</dimen>
+    <dimen name="main_screen_wod_title">26sp</dimen>
 </resources>

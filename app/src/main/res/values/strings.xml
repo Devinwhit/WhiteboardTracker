@@ -13,4 +13,9 @@
     <string name="submit">Submit</string>
     <string name="workout_title">WOD Title</string>
     <string name="title_placeholder">Workout Title</string>
+    <string name="record_workout_reminder">Make sure to log the workout!</string>
+    <string name="noResults">No Results</string>
+    <string name="daily_wod">Today\'s WOD:</string>
+    <string name="log_button">View/Log Workouts</string>
+    <string name="todays_wod">Todays Wod:</string>
 </resources>

@@ -38,15 +38,15 @@ public class Geofencing implements ResultCallback<Status> {
         mGeofencePendingIntent = null;
     }
 
+
     @SuppressLint("MissingPermission")
     public void registerGymGeofence() {
-        /*
+/*
         if (mGoogleApiClient == null || !mGoogleApiClient.isConnected() ||
                 mGeofence == null) {
             return;
         }
-        */
-
+*/
         LocationServices.GeofencingApi.addGeofences(
                 mGoogleApiClient,
                 getGeofencingRequest(),

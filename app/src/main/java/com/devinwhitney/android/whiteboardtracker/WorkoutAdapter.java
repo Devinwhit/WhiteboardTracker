@@ -36,8 +36,9 @@ public class WorkoutAdapter extends RecyclerView.Adapter<WorkoutAdapter.WorkoutA
     @Override
     public void onBindViewHolder(WorkoutAdapterViewHolder holder, int position) {
         System.out.println(String.valueOf(position));
-        holder.mWorkoutText.setText(mWorkouts.get(position).getResults());
+        holder.mWorkoutText.setText(mWorkouts.get(position).getWod());
         holder.mWorkoutTitle.setText(mWorkouts.get(position).getTitle());
+        holder.mWorkoutResultText.setText(mWorkouts.get(position).getResults());
     }
 
     @Override
@@ -49,11 +50,13 @@ public class WorkoutAdapter extends RecyclerView.Adapter<WorkoutAdapter.WorkoutA
     public class WorkoutAdapterViewHolder extends RecyclerView.ViewHolder {
         public TextView mWorkoutText;
         public TextView mWorkoutTitle;
+        public TextView mWorkoutResultText;
         public Workout singleWorkout;
         public WorkoutAdapterViewHolder(View view) {
             super(view);
             mWorkoutText = view.findViewById(R.id.workout_cardview_text);
             mWorkoutTitle = view.findViewById(R.id.workout_cardview_title);
+            mWorkoutResultText = view.findViewById(R.id.workout_cardview_results);
             //mWorkoutText.setText(""));
         }
     }

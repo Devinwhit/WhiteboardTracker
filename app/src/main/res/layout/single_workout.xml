@@ -18,12 +18,26 @@
             android:layout_width="match_parent"
             android:layout_height="@dimen/cardview_line"
             android:background="@android:color/darker_gray" />
-
-        <TextView
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/DefaultWorkoutText"
-            android:id="@+id/workout_cardview_text"/>
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="@string/DefaultWorkoutText"
+                android:id="@+id/workout_cardview_text"
+                android:layout_weight=".5"/>
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="@string/noResults"
+                android:id="@+id/workout_cardview_results"
+                android:layout_weight=".5"/>
+
+        </LinearLayout>
+
+
 
     </LinearLayout>
 
