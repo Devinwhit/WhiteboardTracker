@@ -139,13 +139,16 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         setupSharedPreferences();
         mGeoDataClient = Places.getGeoDataClient(this, null);
         getMainPhoto();
-        mClient = new GoogleApiClient.Builder(this)
-                .addConnectionCallbacks(this)
-                .addApi(LocationServices.API)
-                .addApi(Places.GEO_DATA_API)
-                .enableAutoManage(this, this)
-                .build();
-        mGeofencing = new Geofencing(mClient, this);
+        if (mClient == null) {
+            mClient = new GoogleApiClient.Builder(this)
+                    .addConnectionCallbacks(this)
+                    .addApi(LocationServices.API)
+                    .addApi(Places.GEO_DATA_API)
+                    .enableAutoManage(this, this)
+                    .build();
+            mGeofencing = new Geofencing(mClient, this);
+        }
+
 
         checkTodaysWod();
 
@@ -283,7 +286,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 SharedPreferences.Editor editor = sharedPreferences.edit();
                 editor.putString("gym", place.getName().toString());
                 editor.putString("placeID", place.getId());
-                mGeofencing.setGeofence(place);
+                refreshPlacesData();
                 editor.apply();
             }
         }
@@ -376,8 +379,11 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     public void refreshPlacesData() {
 
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        PendingResult<PlaceBuffer> placeResult = Places.GeoDataApi.getPlaceById(mClient,
-                sharedPreferences.getString("placeID", "f44868d96a3c47f112e9ca74c26c58e57f00e956"));
+        String placeID = sharedPreferences.getString("placeID", "Not Set");
+        if (placeID.equals("Not Set")) {
+            return;
+        }
+        PendingResult<PlaceBuffer> placeResult = Places.GeoDataApi.getPlaceById(mClient, placeID);
         placeResult.setResultCallback(new ResultCallback<PlaceBuffer>() {
             @Override
             public void onResult(@NonNull PlaceBuffer places) {
