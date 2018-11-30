@@ -9,3 +9,6 @@
 .externalNativeBuild
 app/src/main/res/values/APIkeys.xml
 app/google-services.json
+*.jks
+*.apk
+app/release/output.json
