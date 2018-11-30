@@ -5,33 +5,44 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="com.devinwhitney.android.whiteboardtracker.MainActivity">
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/main_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimaryDark"
+        android:elevation="4dp"
+        android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"/>
+
     <FrameLayout
         android:id="@+id/photo_container"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@+id/main_toolbar">
 
-    <ImageView
-        android:id="@+id/mainPhoto"
-        android:layout_width="match_parent"
-        android:layout_height="240dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:scaleType="centerCrop"/>
+        <ImageView
+            android:id="@+id/mainPhoto"
+            android:layout_width="match_parent"
+            android:layout_height="240dp"
+            android:scaleType="centerCrop"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
         <View
             android:layout_width="match_parent"
             android:layout_height="112dp"
-            android:background="@drawable/photo_background_protection"
-            android:layout_gravity="bottom"/>
+            android:layout_gravity="bottom"
+            android:background="@drawable/photo_background_protection" />
 
-    <TextView
-        android:id="@+id/gymName"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:text="Hello World!"
-        android:textSize="@dimen/main_title_size"
-        android:textColor="#FFF"/>
+        <TextView
+            android:id="@+id/gymName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:text="Hello World!"
+            android:textColor="#FFF"
+            android:textSize="@dimen/main_title_size" />
 
     </FrameLayout>
 

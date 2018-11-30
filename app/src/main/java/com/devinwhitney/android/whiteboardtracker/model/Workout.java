@@ -1,7 +1,5 @@
 package com.devinwhitney.android.whiteboardtracker.model;
 
-import java.util.Date;
-
 /**
  * Created by devin on 10/5/2018.
  */

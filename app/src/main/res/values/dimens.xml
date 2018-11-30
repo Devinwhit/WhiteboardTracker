@@ -9,4 +9,6 @@
     <dimen name="main_title_size">22sp</dimen>
     <dimen name="main_screen_wod">16sp</dimen>
     <dimen name="main_screen_wod_title">26sp</dimen>
+    <dimen name="widget_margin">0dp</dimen>
+    <dimen name="widget_text_size">18sp</dimen>
 </resources>

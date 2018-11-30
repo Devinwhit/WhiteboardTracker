@@ -1,14 +1,10 @@
 package com.devinwhitney.android.whiteboardtracker;
 
-import android.Manifest;
-import android.Manifest.permission;
 import android.annotation.SuppressLint;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
@@ -16,10 +12,7 @@ import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingRequest;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.places.GeoDataClient;
 import com.google.android.gms.location.places.Place;
-
-import java.util.Calendar;
 
 /**
  * Created by devin on 10/19/2018.
@@ -62,7 +55,7 @@ public class Geofencing implements ResultCallback<Status> {
         Geofence geofence = new Geofence.Builder()
                 .setRequestId(placeUID)
                 .setExpirationDuration(Geofence.NEVER_EXPIRE)
-                .setCircularRegion(placeLatitude, placeLongitude, 500)
+                .setCircularRegion(placeLatitude, placeLongitude, 100)
                 .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER | Geofence.GEOFENCE_TRANSITION_EXIT)
                 .build();
         mGeofence = geofence;

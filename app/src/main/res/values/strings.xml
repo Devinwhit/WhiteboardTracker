@@ -18,4 +18,15 @@
     <string name="daily_wod">Today\'s WOD:</string>
     <string name="log_button">View/Log Workouts</string>
     <string name="todays_wod">Todays Wod:</string>
+    <string name="results_missing_toast">Make sure to fill everything out</string>
+    <string name="Network_connection_good">Network connection found</string>
+    <string name="Network_connection_bad">Error - no network connection</string>
+    <string name="log_out_network_error">Cannot logout - no network connection</string>
+    <string name="record_workout_no_connection">Need network connection</string>
+    <string name="appwidget_text">Your Daily WOD will appear here when you enter it</string>
+    <string name="No_location_found">No Location Found</string>
+    <string name="Set_home_gym">Set home gym</string>
+    <string name="need_network_connection">Need network connection</string>
+    <string name="gym_not_found">Gym not found</string>
+    <string name="Not_set">Not Set</string>
 </resources>

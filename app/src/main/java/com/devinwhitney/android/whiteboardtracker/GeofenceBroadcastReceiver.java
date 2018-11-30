@@ -17,7 +17,6 @@ import android.support.v4.app.NotificationCompat;
 public class GeofenceBroadcastReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
-        System.out.println("Message received!");
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             NotificationChannel mChannel = new NotificationChannel("record_workout_channel", "record_workout_channel", NotificationManager.IMPORTANCE_HIGH);

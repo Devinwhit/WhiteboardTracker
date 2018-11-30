@@ -1,14 +1,12 @@
 package com.devinwhitney.android.whiteboardtracker;
 
 import android.app.DatePickerDialog;
-import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.preference.PreferenceManager;
-import android.util.AttributeSet;
 import android.view.View;
 import android.widget.Button;
 import android.widget.DatePicker;
@@ -25,7 +23,6 @@ import com.google.firebase.database.FirebaseDatabase;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Date;
 
 /**
  * Created by devin on 10/5/2018.
@@ -58,7 +55,7 @@ public class AddResults extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 if (!verifyInfo()){
-                    Toast.makeText(getApplicationContext(), "Make sure to fill everything out", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), R.string.results_missing_toast, Toast.LENGTH_SHORT).show();
                     return;
                 }
                 Workout workout = new Workout();
@@ -68,7 +65,7 @@ public class AddResults extends AppCompatActivity {
                 workout.setWod(wodText.getText().toString());
                 workout.setTitle(wodTitle.getText().toString());
                 SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(AddResults.this);
-                workout.setGym(sharedPreferences.getString("gym", "Set home gym"));
+                workout.setGym(sharedPreferences.getString("gym", getString(R.string.Set_home_gym)));
 
                 mWorkoutDatabseReference.push().setValue(workout);
                 finish();

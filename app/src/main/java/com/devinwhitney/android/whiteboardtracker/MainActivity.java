@@ -1,21 +1,26 @@
 package com.devinwhitney.android.whiteboardtracker;
 
 import android.Manifest;
+import android.app.job.JobInfo;
+import android.app.job.JobScheduler;
+import android.appwidget.AppWidgetManager;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.content.res.AssetManager;
-import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.location.Location;
-import android.net.Uri;
+import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.preference.PreferenceManager;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -53,19 +58,11 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.googlecode.tesseract.android.TessBaseAPI;
 import com.squareup.picasso.Picasso;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
 import java.util.Random;
 
 public class MainActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
@@ -93,27 +90,12 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     protected GeoDataClient mGeoDataClient;
 
+    private boolean mIsConnected;
+    private BroadcastReceiver mBroadcast;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        mFirebaseAuth = FirebaseAuth.getInstance();
-
-        mRecordWorkout = findViewById(R.id.record_workout_button);
-        mTodaysWod = findViewById(R.id.main_screen_wod);
-        mRecordWorkout.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                //Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                //startActivityForResult(intent, CAMERA);
-                Intent intent = new Intent(MainActivity.this, ViewWorkoutActivity.class);
-                startActivity(intent);
-            }
-
-        });
-
-        mMainPhoto = findViewById(R.id.mainPhoto);
         mAuthStateListener = new FirebaseAuth.AuthStateListener() {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
@@ -133,9 +115,32 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 }
             }
         };
+        setContentView(R.layout.activity_main);
+        Toolbar toolbar = findViewById(R.id.main_toolbar);
+        setSupportActionBar(toolbar);
+        mFirebaseAuth = FirebaseAuth.getInstance();
+
+        mRecordWorkout = findViewById(R.id.record_workout_button);
+        mTodaysWod = findViewById(R.id.main_screen_wod);
+        mRecordWorkout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (getmIsConnected()){
+                    Intent intent = new Intent(MainActivity.this, ViewWorkoutActivity.class);
+                    startActivity(intent);
+                } else {
+                    Toast.makeText(getApplicationContext(), R.string.record_workout_no_connection, Toast.LENGTH_SHORT).show();
+                }
+
+            }
+
+        });
+
+        mMainPhoto = findViewById(R.id.mainPhoto);
+
         mGymLocation = findViewById(R.id.gymName);
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        mGymLocation.setText(sharedPreferences.getString("gym", "No Location Found"));
+        mGymLocation.setText(sharedPreferences.getString("gym", getString(R.string.No_location_found)));
         setupSharedPreferences();
         mGeoDataClient = Places.getGeoDataClient(this, null);
         getMainPhoto();
@@ -152,6 +157,25 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
         checkTodaysWod();
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+
+            scheduleConnectionCheck();
+        }
+
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    private void scheduleConnectionCheck() {
+        JobInfo jobInfo = new JobInfo.Builder(5000, new ComponentName(this, NetworkScheduler.class))
+                .setRequiresCharging(false)
+                .setMinimumLatency(1000)
+                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_NONE)
+                .setPersisted(true)
+                .build();
+
+        JobScheduler jobScheduler = (JobScheduler) getSystemService(Context.JOB_SCHEDULER_SERVICE);
+        jobScheduler.schedule(jobInfo);
+
     }
 
     private void checkTodaysWod() {
@@ -164,6 +188,13 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 if (workout != null) {
                     mTodaysWod.setText(workout.getWod());
                 }
+                Intent updateWidget = new Intent(getApplicationContext(), WorkoutWidget.class);
+                updateWidget.putExtra(WorkoutWidget.UPDATE_WIDGET, workout.getWod());
+                updateWidget.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
+                int[] ids = AppWidgetManager.getInstance(getApplication())
+                        .getAppWidgetIds(new ComponentName(getApplication(), WorkoutWidget.class));
+                updateWidget.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids);
+                sendBroadcast(updateWidget);
             }
 
             @Override
@@ -201,12 +232,12 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     private void getMainPhoto() {
         SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
 
-            final String placeId = pref.getString("placeID", "Set home gym");
-            final Task<PlacePhotoMetadataResponse> photoMetadataResponse = mGeoDataClient.getPlacePhotos(placeId);
-            photoMetadataResponse.addOnCompleteListener(new OnCompleteListener<PlacePhotoMetadataResponse>() {
-                @Override
-                public void onComplete(@NonNull Task<PlacePhotoMetadataResponse> task) {
-                    try {
+        final String placeId = pref.getString("placeID", getString(R.string.Set_home_gym));
+        final Task<PlacePhotoMetadataResponse> photoMetadataResponse = mGeoDataClient.getPlacePhotos(placeId);
+        photoMetadataResponse.addOnCompleteListener(new OnCompleteListener<PlacePhotoMetadataResponse>() {
+            @Override
+            public void onComplete(@NonNull Task<PlacePhotoMetadataResponse> task) {
+                try {
                     // Get the list of photos.
                     PlacePhotoMetadataResponse photos = task.getResult();
                     // Get the PlacePhotoMetadataBuffer (metadata for all of the photos).
@@ -223,12 +254,12 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                             mMainPhoto.setImageBitmap(bitmap);
                         }
                     });
-                    } catch (Exception e) {
-                        System.out.println("No id set");
-                        Picasso.get().load("https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=de05b46a8ac91fcff2b134811e62d79f&auto=format&fit=crop&w=1489&q=80").into(mMainPhoto);
-                    }
+                } catch (Exception e) {
+                    System.out.println("No id set");
+                    Picasso.get().load("https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=de05b46a8ac91fcff2b134811e62d79f&auto=format&fit=crop&w=1489&q=80").into(mMainPhoto);
                 }
-            });
+            }
+        });
 
     }
 
@@ -239,43 +270,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == CAMERA && resultCode == RESULT_OK) {
-            BitmapFactory.Options options = new BitmapFactory.Options();
-            options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-            Bitmap imageBitmap = (Bitmap) data.getExtras().get("data");
-
-            String dataPath = this.getFilesDir().toString();
-            // or any other dir where you app has file write permissions
-            File dir = new File(dataPath + "tessdata");
-            dir.mkdirs();
-
-            if (!(new File(dataPath + "tessdata/eng.traineddata")).exists()) {
-                try {
-
-                    AssetManager assetManager = getAssets();
-                    InputStream in = assetManager.open("eng.traineddata");
-                    OutputStream out = new FileOutputStream(dataPath
-                            + "tessdata/eng.traineddata");
-
-                    byte[] buf = new byte[1024];
-                    int len;
-                    while ((len = in.read(buf)) > 0) {
-                        out.write(buf, 0, len);
-                    }
-                    in.close();
-                    out.close();
-                } catch (IOException e) {
-                }
-            }
-
-            imageBitmap = imageBitmap.copy(Bitmap.Config.ARGB_8888, true);
-            TessBaseAPI baseAPI = new TessBaseAPI();
-            baseAPI.init(dataPath, "eng");
-            baseAPI.setImage(imageBitmap);
-
-            String text = baseAPI.getUTF8Text();
-            baseAPI.end();
-        }
 
         if (requestCode == PLACE_PICKER_REQUEST) {
             if (resultCode == RESULT_OK) {
@@ -293,6 +287,38 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        Intent intent = new Intent(this, NetworkScheduler.class);
+        startService(intent);
+        IntentFilter intentFilter = new IntentFilter("android.intent.action.MAIN");
+        mBroadcast = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                boolean connection = intent.getBooleanExtra("connection", false);
+                setmIsConnected(connection);
+            }
+        };
+        this.registerReceiver(mBroadcast, intentFilter);
+    }
+
+
+    public boolean getmIsConnected() {
+        return mIsConnected;
+    }
+
+    public void setmIsConnected(boolean mIsConnected) {
+        this.mIsConnected = mIsConnected;
+    }
+
+
+    @Override
+    protected void onStop() {
+        stopService(new Intent(this, NetworkScheduler.class));
+        super.onStop();
+
+    }
+    @Override
     protected void onResume() {
         super.onResume();
         mFirebaseAuth.addAuthStateListener(mAuthStateListener);
@@ -302,12 +328,15 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     protected void onPause() {
         super.onPause();
         mFirebaseAuth.removeAuthStateListener(mAuthStateListener);
+
+        mClient.disconnect();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         PreferenceManager.getDefaultSharedPreferences(this).unregisterOnSharedPreferenceChangeListener(this);
+        this.unregisterReceiver(mBroadcast);
     }
 
     @Override
@@ -325,8 +354,13 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         int id = item.getItemId();
         switch(id) {
             case R.id.log_out:
-                AuthUI.getInstance().signOut(this);
-                return true;
+                if (getmIsConnected()){
+                    AuthUI.getInstance().signOut(this);
+                    return true;
+                } else {
+                    Toast.makeText(this, R.string.need_network_connection, Toast.LENGTH_SHORT).show();
+                    return false;
+                }
             case R.id.set_gym:
                 PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
                 try {
@@ -348,7 +382,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String s) {
         if (s.equals("gym")) {
-            mGymLocation.setText(sharedPreferences.getString(s, "Gym not found"));
+            mGymLocation.setText(sharedPreferences.getString(s, getString(R.string.gym_not_found)));
         } else if (s.equals("placeID")) {
             getMainPhoto();
         }
@@ -379,7 +413,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     public void refreshPlacesData() {
 
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        String placeID = sharedPreferences.getString("placeID", "Not Set");
+        String placeID = sharedPreferences.getString("placeID", getString(R.string.Not_set));
         if (placeID.equals("Not Set")) {
             return;
         }
